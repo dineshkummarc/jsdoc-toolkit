@@ -37,7 +37,9 @@ new Namespace(
 			"=link":               "see",
 			"=borrows":            "inherits",
 			"=scope":              "lends",
-			"=construct":          "constructor"
+			"=construct":          "constructor",
+			"=option":             "config",
+			"=opt":                "config"
 		}
 	}
 );

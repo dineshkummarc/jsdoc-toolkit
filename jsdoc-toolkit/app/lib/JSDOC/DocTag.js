@@ -40,7 +40,7 @@ JSDOC.DocTag.prototype.parse = function(src) {
 		src = this.nibbleType(src);
 		
 		// only some tags are allowed to have names.
-		if (this.title == "param" || this.title == "property" || this.title == "config") { // @config is deprecated
+		if (this.title == "param" || this.title == "property" || this.title == "config" || this.title == "option" || this.title == "opt") { // @config is deprecated
 			src = this.nibbleName(src);
 		}
 	}
