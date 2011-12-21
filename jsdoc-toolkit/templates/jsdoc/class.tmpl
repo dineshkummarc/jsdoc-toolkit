@@ -118,6 +118,8 @@
 								if (member.isInner) output += "&lt;inner&gt; ";
 								if (member.isStatic) output += "&lt;static&gt; ";
 								if (member.isConstant) output += "&lt;constant&gt; ";
+								if (member.isReadable && !member.isWritable) output += "&lt;read-only&gt; ";
+								if (member.isWritable && !member.isReadable) output += "&lt;write-only&gt; ";
 							!}&nbsp;</td>
 							<td class="nameDescription">
 								<div class="fixedFont">
@@ -382,6 +384,8 @@
 						if (member.isInner) output += "&lt;inner&gt; ";
 						if (member.isStatic) output += "&lt;static&gt; ";
 						if (member.isConstant) output += "&lt;constant&gt; ";
+						if (member.isReadable && !member.isWritable) output += "&lt;read-only&gt; ";
+						if (member.isWritable && !member.isReadable) output += "&lt;write-only&gt; ";
 					!}
 					
 					<if test="member.type"><span class="light">{{+new Link().toSymbol(member.type)+}}</span></if>

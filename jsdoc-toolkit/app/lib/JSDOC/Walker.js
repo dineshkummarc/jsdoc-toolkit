@@ -62,6 +62,43 @@ JSDOC.Walker.prototype.step = function() {
 			JSDOC.Parser.rename = (JSDOC.Parser.rename || {});	
 			JSDOC.Parser.rename[n1] = n2
 		}
+
+		// Add support for @getter and @setter - A little to tricky to do in a plugin.
+		if (doc.getTag("getter").length > 0) {
+			var tag = doc.getTag("getter")[0];
+
+			doc.tags.push(new JSDOC.DocTag('field'));
+			doc.tags.push(new JSDOC.DocTag('type ' +tag.type));
+
+			// If symbol already exists then just update permissions on it
+			var prevSymbol = JSDOC.Parser.symbols.getSymbol(this.namescope.last().alias + tag.desc);
+			if (prevSymbol) {
+				prevSymbol.isReadable = true;
+				doc.tags.push(new JSDOC.DocTag('ignore'));
+			} else {
+				if (!this._getterSetterData) this._getterSetterData = {};
+				this._getterSetterData.readable = true;
+				this._getterSetterData.name = tag.desc;
+			}
+
+		}
+		if (doc.getTag("setter").length > 0) {
+			var tag = doc.getTag("setter")[0];
+
+			doc.tags.push(new JSDOC.DocTag('field'));
+			doc.tags.push(new JSDOC.DocTag('type ' +tag.type));
+
+			// If symbol already exists then just update permissions on it
+			var prevSymbol = JSDOC.Parser.symbols.getSymbol(this.namescope.last().alias + tag.desc);
+			if (prevSymbol) {
+				prevSymbol.isWritable = true
+				doc.tags.push(new JSDOC.DocTag('ignore'));
+			} else {
+				if (!this._getterSetterData) this._getterSetterData = {};
+				this._getterSetterData.writable = true;
+				this._getterSetterData.name = tag.desc;
+			}
+		}
 		
 		if (doc.getTag("lends").length > 0) {
 			var lends = doc.getTag("lends")[0];
@@ -128,6 +165,17 @@ JSDOC.Walker.prototype.step = function() {
 			var doc = null; if (this.lastDoc) doc = this.lastDoc;
 			var params = [];
 			
+			var readable = true;
+			var writable = true;
+
+			// Update setter/getter values
+			if (this._getterSetterData) {
+				name = this._getterSetterData.name;
+				readable = !!this._getterSetterData.readable;
+				writable = !!this._getterSetterData.writable;
+				delete this._getterSetterData;
+			}
+
 			// it's subscripted like foo[1]
 			if (this.ts.look(1).is("LEFT_BRACKET")) {
 				name += JSDOC.TokenStream.tokensToString(this.ts.balance("LEFT_BRACKET"));
@@ -148,6 +196,38 @@ JSDOC.Walker.prototype.step = function() {
 				var matching = this.ts.getMatchingToken(null, "RIGHT_CURLY");
 				if (matching) matching.popNamescope = name;
 				else LOG.warn("Mismatched } character. Can't parse code in file " + symbol.srcFile + ".");
+			}
+			else if (this.ts.look(-1).is("GET") && this.ts.look(1).is("LEFT_PAREN")) {
+				name = (this.namescope.last().alias+"."+name).replace("#.", "#");;
+				
+				if (this.lastDoc) doc = this.lastDoc;
+				
+				symbol = JSDOC.Parser.symbols.getSymbol(name);
+				if (!symbol) {
+					symbol = new JSDOC.Symbol(name, params, "OBJECT", doc);
+					writable = false
+				} else {
+					writable = symbol.isWritable
+				}
+				readable = true
+			
+				if (doc) JSDOC.Parser.addSymbol(symbol);
+			}
+			else if (this.ts.look(-1).is("SET") && this.ts.look(1).is("LEFT_PAREN")) {
+				name = (this.namescope.last().alias+"."+name).replace("#.", "#");;
+				
+				if (this.lastDoc) doc = this.lastDoc;
+				
+				symbol = JSDOC.Parser.symbols.getSymbol(name);
+				if (!symbol) {
+					symbol = new JSDOC.Symbol(name, params, "OBJECT", doc);
+					readable = false
+				} else {
+					readable = symbol.isReadable
+				}
+				writable = true
+			
+				if (doc) JSDOC.Parser.addSymbol(symbol);
 			}
 			// function foo() {}
 			else if (this.ts.look(-1).is("FUNCTION") && this.ts.look(1).is("LEFT_PAREN")) {
@@ -432,6 +512,11 @@ JSDOC.Walker.prototype.step = function() {
 				if (matching) matching.popNamescope = name;
 				else LOG.warn("Mismatched } character. Can't parse code in file " + symbol.srcFile + ".");
 			}
+		}
+
+		if (symbol) {
+			symbol.isReadable = readable;
+			symbol.isWritable = writable;
 		}
 	}
 	return true;

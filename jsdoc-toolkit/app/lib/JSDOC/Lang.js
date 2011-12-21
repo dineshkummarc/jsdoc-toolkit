@@ -65,7 +65,9 @@ JSDOC.Lang.keyword.names = {
 	"=void":       "VOID",
 	"=while":      "WHILE",
 	"=with":       "WITH",
-	"=var":        "VAR"
+	"=var":        "VAR",
+	"=get":        "GET",
+	"=set":        "SET"
 };
 
 JSDOC.Lang.punc = function(ch) {
