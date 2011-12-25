@@ -1,3 +1,4 @@
+// vim:noet
 if (typeof JSDOC == "undefined") JSDOC = {};
 
 /** @constructor */
@@ -60,50 +61,53 @@ JSDOC.Walker.prototype.step = function() {
 			if (!n1 && n2) throw "@exports tag requires a value like: 'name as ns.name'";
 			
 			JSDOC.Parser.rename = (JSDOC.Parser.rename || {});	
-			JSDOC.Parser.rename[n1] = n2
+			JSDOC.Parser.rename[n1] = n2;
 		}
 
 		// Add support for @getter and @setter - A little to tricky to do in a plugin.
 		if (doc.getTag("getter").length > 0) {
-			var tag = doc.getTag("getter")[0];
+			var name = doc.getTag("getter")[0];
 
-			doc.tags.push(new JSDOC.DocTag('field'));
-			doc.tags.push(new JSDOC.DocTag('type ' +tag.type));
-
-			// If symbol already exists then just update permissions on it
-			var prevSymbol = JSDOC.Parser.symbols.getSymbol(this.namescope.last().alias + tag.desc);
-			if (prevSymbol) {
-				prevSymbol.isReadable = true;
-				doc.tags.push(new JSDOC.DocTag('ignore'));
+			if (doc.getTag("memberOf").length > 0) {
+				name = (doc.getTag("memberOf")[0]+"."+name).replace("#.", "#");
+				doc.deleteTag("memberOf");
 			} else {
-				if (!this._getterSetterData) this._getterSetterData = {};
-				this._getterSetterData.readable = true;
-				this._getterSetterData.name = tag.desc;
+				name = (this.namescope.last().alias+"."+name).replace("#.", "#");
 			}
 
+			var symbol = JSDOC.Parser.symbols.getSymbol(name);
+
+			if (!symbol) {
+				symbol = new JSDOC.Symbol(name, [], "OBJECT", doc);
+				symbol.isWritable = false;
+			}
+			symbol.isReadable = true;
+			if (doc && !JSDOC.Parser.symbols.hasSymbol(name)) JSDOC.Parser.addSymbol(symbol);
 		}
 		if (doc.getTag("setter").length > 0) {
-			var tag = doc.getTag("setter")[0];
+			var name = doc.getTag("setter")[0];
 
-			doc.tags.push(new JSDOC.DocTag('field'));
-			doc.tags.push(new JSDOC.DocTag('type ' +tag.type));
-
-			// If symbol already exists then just update permissions on it
-			var prevSymbol = JSDOC.Parser.symbols.getSymbol(this.namescope.last().alias + tag.desc);
-			if (prevSymbol) {
-				prevSymbol.isWritable = true
-				doc.tags.push(new JSDOC.DocTag('ignore'));
+			if (doc.getTag("memberOf").length > 0) {
+				name = (doc.getTag("memberOf")[0]+"."+name).replace("#.", "#");
+				doc.deleteTag("memberOf");
 			} else {
-				if (!this._getterSetterData) this._getterSetterData = {};
-				this._getterSetterData.writable = true;
-				this._getterSetterData.name = tag.desc;
+				name = (this.namescope.last().alias+"."+name).replace("#.", "#");
 			}
+
+			var symbol = JSDOC.Parser.symbols.getSymbol(name);
+
+			if (!symbol) {
+				symbol = new JSDOC.Symbol(name, [], "OBJECT", doc);
+				symbol.isReadable = false;
+			}
+			symbol.isWritable = true;
+			if (doc && !JSDOC.Parser.symbols.hasSymbol(name)) JSDOC.Parser.addSymbol(symbol);
 		}
 		
 		if (doc.getTag("lends").length > 0) {
 			var lends = doc.getTag("lends")[0];
 
-			var name = lends.desc
+			var name = lends.desc;
 			if (!name) throw "@lends tag requires a value.";
 			
 			var symbol = new JSDOC.Symbol(name, [], "OBJECT", doc);
@@ -205,13 +209,13 @@ JSDOC.Walker.prototype.step = function() {
 				symbol = JSDOC.Parser.symbols.getSymbol(name);
 				if (!symbol) {
 					symbol = new JSDOC.Symbol(name, params, "OBJECT", doc);
-					writable = false
+					writable = false;
 				} else {
-					writable = symbol.isWritable
+					writable = symbol.isWritable;
 				}
-				readable = true
+				readable = true;
 			
-				if (doc) JSDOC.Parser.addSymbol(symbol);
+				if (doc && !JSDOC.Parser.symbols.hasSymbol(name)) JSDOC.Parser.addSymbol(symbol);
 			}
 			else if (this.ts.look(-1).is("SET") && this.ts.look(1).is("LEFT_PAREN")) {
 				name = (this.namescope.last().alias+"."+name).replace("#.", "#");;
@@ -221,13 +225,13 @@ JSDOC.Walker.prototype.step = function() {
 				symbol = JSDOC.Parser.symbols.getSymbol(name);
 				if (!symbol) {
 					symbol = new JSDOC.Symbol(name, params, "OBJECT", doc);
-					readable = false
+					readable = false;
 				} else {
-					readable = symbol.isReadable
+					readable = symbol.isReadable;
 				}
-				writable = true
+				writable = true;
 			
-				if (doc) JSDOC.Parser.addSymbol(symbol);
+				if (doc && !JSDOC.Parser.symbols.hasSymbol(name)) JSDOC.Parser.addSymbol(symbol);
 			}
 			// function foo() {}
 			else if (this.ts.look(-1).is("FUNCTION") && this.ts.look(1).is("LEFT_PAREN")) {
