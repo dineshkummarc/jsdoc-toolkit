@@ -169,17 +169,6 @@ JSDOC.Walker.prototype.step = function() {
 			var doc = null; if (this.lastDoc) doc = this.lastDoc;
 			var params = [];
 			
-			var readable = true;
-			var writable = true;
-
-			// Update setter/getter values
-			if (this._getterSetterData) {
-				name = this._getterSetterData.name;
-				readable = !!this._getterSetterData.readable;
-				writable = !!this._getterSetterData.writable;
-				delete this._getterSetterData;
-			}
-
 			// it's subscripted like foo[1]
 			if (this.ts.look(1).is("LEFT_BRACKET")) {
 				name += JSDOC.TokenStream.tokensToString(this.ts.balance("LEFT_BRACKET"));
@@ -209,11 +198,9 @@ JSDOC.Walker.prototype.step = function() {
 				symbol = JSDOC.Parser.symbols.getSymbol(name);
 				if (!symbol) {
 					symbol = new JSDOC.Symbol(name, params, "OBJECT", doc);
-					writable = false;
-				} else {
-					writable = symbol.isWritable;
+					symbol.isWritable = false;
 				}
-				readable = true;
+				symbol.isReadable = true
 			
 				if (doc && !JSDOC.Parser.symbols.hasSymbol(name)) JSDOC.Parser.addSymbol(symbol);
 			}
@@ -225,9 +212,9 @@ JSDOC.Walker.prototype.step = function() {
 				symbol = JSDOC.Parser.symbols.getSymbol(name);
 				if (!symbol) {
 					symbol = new JSDOC.Symbol(name, params, "OBJECT", doc);
-					readable = false;
+					symbol.isReadable = false;
 				} else {
-					readable = symbol.isReadable;
+					symbol.isWritable = true;
 				}
 				writable = true;
 			
@@ -516,11 +503,6 @@ JSDOC.Walker.prototype.step = function() {
 				if (matching) matching.popNamescope = name;
 				else LOG.warn("Mismatched } character. Can't parse code in file " + symbol.srcFile + ".");
 			}
-		}
-
-		if (symbol) {
-			symbol.isReadable = readable;
-			symbol.isWritable = writable;
 		}
 	}
 	return true;

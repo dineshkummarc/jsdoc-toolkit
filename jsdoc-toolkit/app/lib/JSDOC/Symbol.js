@@ -487,6 +487,11 @@ JSDOC.Symbol.prototype.setTags = function() {
 	if (this.comment.getTag("private").length || this.isInner) {
 		this.isPrivate = true;
 	}
+
+	// @readonly
+	if (this.comment.getTag("readonly").length) {
+		this.isWritable = false;
+	}
 	
 	// @ignore
 	if (this.comment.getTag("ignore").length) {
